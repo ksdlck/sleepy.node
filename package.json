@@ -1,0 +1,19 @@
+{
+  "author": "Karel Sedláček <k@ksdlck.com> (http://ksdlck.com)",
+  "name": "sleepy.node",
+  "description": "An example Node.js binding",
+  "version": "0.0.1",
+  "homepage": "https://ksdlck.com",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ksdlck/binding.node.git"
+  },
+  "scripts": {
+    "preinstall": "node-waf configure build",
+  },
+  "engines": {
+    "node": "~0.6.7"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
