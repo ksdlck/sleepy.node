@@ -7,28 +7,45 @@ using namespace std;
 using namespace v8;
 using namespace node;
 
-class Sleepy: Object
+class Sleepy
 {
+private:
+  unsigned secs;
+
 public:
   static Handle<Function> Init() {
     HandleScope scope;
 
-    Persistent<FunctionTemplate> sleepy = Persistent<FunctionTemplate>::New(FunctionTemplate::New());
-    sleepy->SetCallHandler(CallHandler);
+    Handle<FunctionTemplate> sleepy = FunctionTemplate::New(New);
 
     Local<Template> sproto = sleepy->PrototypeTemplate();
-    sproto->Set(String::NewSymbol("sleep"), FunctionTemplate::New(Sleep)->GetFunction());
+    sproto->Set(String::NewSymbol("sleep"), FunctionTemplate::New(Sleep));
 
     Local<ObjectTemplate> sinst = sleepy->InstanceTemplate();
+    sinst->SetInternalFieldCount(1);
     sinst->SetNamedPropertyHandler(NamedPropGet, NamedPropSet);
     sinst->SetIndexedPropertyHandler(IndexedPropGet, IndexedPropSet);
 
     return sleepy->GetFunction();
   }
 
-  static Handle<Value> CallHandler(const Arguments& args) {
+  Sleepy(unsigned _secs) {
+    secs = _secs;
+  }
+
+  ~Sleepy() {
+  }
+
+  static Handle<Value> New(const Arguments& args) {
+    HandleScope scope;
+
     cout << "Go away! I'm sleepy!\n";
-    return Handle<Value>();
+
+    unsigned secs = Integer::Cast(*args[0])->Value();
+    Sleepy* sleepy = new Sleepy(secs);
+
+    Persistent<Object>::New(args.This())->SetInternalField(0, External::Wrap(sleepy));
+    return args.This();
   }
 
   static Handle<Value> NamedPropGet(Local<String> prop, const AccessorInfo& info) {
@@ -53,29 +70,23 @@ public:
 
   struct SleepData
   {
-    unsigned secs;
+    Sleepy* sleepy;
     Persistent<Function> cont;
   };
 
   static Handle<Value> Sleep(const Arguments& args) {
     HandleScope scope;
-    // TODO don't need this ref for this fn, but might be nice to have an example that uses it.
-    //Sleepy* self = static_cast<Sleepy*>(args.This()->GetPointerFromInternalField(0));
 
     if(args.Length() < 1)
-      return ThrowException(Exception::TypeError(String::New("You need to tell me how long to sleep!")));
-    if(!args[0]->IsNumber())
-      return ThrowException(Exception::TypeError(String::New("I can only sleep an integer number of seconds!")));
-    if(args.Length() < 2)
       return ThrowException(Exception::TypeError(String::New("You need to tell me what to do after I sleep!")));
-    if(!args[1]->IsFunction())
+    if(!args[0]->IsFunction())
       return ThrowException(Exception::TypeError(String::New("I can only do a function after I sleep!")));
 
-    unsigned secs = Integer::Cast(*args[0])->Value();
-    Local<Function> cont = Local<Function>::Cast(args[1]);
+    Sleepy* self = static_cast<Sleepy*>(External::Unwrap(args.Holder()->GetInternalField(0)));
+    Local<Function> cont = Local<Function>::Cast(args[0]);
 
     SleepData* data = new SleepData;
-    data->secs = secs;
+    data->sleepy = self;
     data->cont = Persistent<Function>::New(cont);
 
     uv_work_t* req = new uv_work_t;
@@ -92,7 +103,7 @@ public:
   static void SleepWork(uv_work_t *req) {
     SleepData* data = static_cast<SleepData*>(req->data);
 
-    sleep(data->secs);
+    sleep(data->sleepy->secs);
   }
 
   static void SleepAfterWork(uv_work_t *req) {

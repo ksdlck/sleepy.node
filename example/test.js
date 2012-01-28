@@ -1,7 +1,9 @@
-sleepy = new (require("../lib/"));
+Sleepy = require("../lib/");
+
+sleepy = new Sleepy(1);
 
 console.log("Sleeping for a while...");
-sleepy.sleep(1, function(){
+sleepy.sleep(function(){
   console.log("Done sleeping!");
+  sleepy[0];
 });
-sleepy[0];
