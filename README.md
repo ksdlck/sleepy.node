@@ -5,7 +5,7 @@ STORY
 -----
 
 It's a grouchy, sleepy...library.
-Written in Javascript and C++, sleepy.node demonstrates a bunch of cool features of V8, and is a really clean example of writing a native binding, including doing IO with libUV, for Node.js.
+Written in Javascript and C++, sleepy.node demonstrates a bunch of cool features of V8, and is a really clean example of writing a Node.js native binding, including doing IO with libUV.
 
 LICENSE
 -------
