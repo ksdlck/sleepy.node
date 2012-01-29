@@ -44,8 +44,16 @@ public:
     unsigned secs = Integer::Cast(*args[0])->Value();
     Sleepy* sleepy = new Sleepy(secs);
 
-    Persistent<Object>::New(args.This())->SetInternalField(0, External::Wrap(sleepy));
-    return args.This();
+    Persistent<Object> obj(Persistent<Object>::New(args.Holder()));
+    obj->SetInternalField(0, External::Wrap(sleepy));
+    obj.MakeWeak(NULL, WeakCallback); /* NOTE you could also implement this by passing sleepy as first arg */
+    return obj;
+  }
+
+  static void WeakCallback(Persistent<Value> obj, void* arg) {
+    cout << "Guess you don't need me anymore...\n";
+    Sleepy* sleepy = static_cast<Sleepy*>(External::Unwrap(Persistent<Object>::Cast(obj)->GetInternalField(0)));
+    delete sleepy;
   }
 
   static Handle<Value> NamedPropGet(Local<String> prop, const AccessorInfo& info) {
